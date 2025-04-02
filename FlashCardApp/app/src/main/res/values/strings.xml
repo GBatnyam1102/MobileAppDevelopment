@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">FlashCardApp</string>
+    <string name="flash_card_app">Flash Card App</string>
+    <string name="start">start</string>
+    <string name="settings">settings</string>
+    <string name="fixandupdate">FixAndUpdate</string>
+</resources>
