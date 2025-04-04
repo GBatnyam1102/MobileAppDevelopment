@@ -1,5 +1,6 @@
 package com.example.flashcardapp.Screen
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MovableContent
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,15 +31,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.flashcardapp.data.WordPair
 import com.example.flashcardapp.model.WordViewModel
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.lastOrNull
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FixAndUpdateScreen(
     viewModel: WordViewModel,
+    selectedWord: WordPair?,
     onInsertAndCancel: () -> Unit
 ) {
-    var englishWord by remember { mutableStateOf("") }
-    var mongolianWord by remember { mutableStateOf("") }
+    var englishWord by remember { mutableStateOf(selectedWord?.english ?: "") }
+    var mongolianWord by remember { mutableStateOf(selectedWord?.mongolian ?: "") }
 
     Scaffold { contentPadding ->
         Column(

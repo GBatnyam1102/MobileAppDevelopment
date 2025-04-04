@@ -3,6 +3,7 @@ import android.content.pm.ModuleInfo
 import android.view.RoundedCorner
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,7 +43,7 @@ import kotlin.collections.get
 fun StartScreen(
     viewModel: WordViewModel,
     context: Context,
-    onFixAndUpdateButtonClick: () -> Unit
+    onFixAndUpdateButtonClick: (WordPair?) -> Unit
 ) {
     val settingsDataStore = remember { SettingsDataStore(context) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -52,11 +54,15 @@ fun StartScreen(
     var inputForeign by remember { mutableStateOf("") }
     var inputMongolian by remember { mutableStateOf("") }
 
-    LaunchedEffect(wordList) {
-        wordList.forEach {
+    val isWordListEmpty = wordList.isEmpty()
 
-        }
-    }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+//    LaunchedEffect(wordList) {
+//        wordList.forEach {
+//
+//        }
+//    }
     // DataStore-оос тохиргооны утга унших
     LaunchedEffect(Unit) {
         settingsDataStore.selectedOptionFlow.collect { option ->
@@ -73,22 +79,22 @@ fun StartScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                val word = listOf(inputMongolian, inputMongolian)
+                val word = listOf(inputMongolian, inputForeign)
                 Column(
                     modifier = Modifier.padding(top = 25.dp)
                 ) {
                     when (selectedOption) {
                         "Гадаад үгийг ил харуулах" -> {
-                            OneTextInput(word, false, false)
-                            OneTextInput(word, true, true)
+                            OneTextInput(word, false, false) {selectedWord -> onFixAndUpdateButtonClick(selectedWord)}
+                            OneTextInput(word, true, true){selectedWord -> onFixAndUpdateButtonClick(selectedWord)}
                         }
                         "Монгол үгийг ил харуулах" -> {
-                            OneTextInput(word, true, false)
-                            OneTextInput(word, false, true)
+                            OneTextInput(word, true, false){selectedWord -> onFixAndUpdateButtonClick(selectedWord)}
+                            OneTextInput(word, false, true){selectedWord -> onFixAndUpdateButtonClick(selectedWord)}
                         }
                         else -> {
-                            OneTextInput(word, false, false)
-                            OneTextInput(word, false, true)
+                            OneTextInput(word, false, false){selectedWord -> onFixAndUpdateButtonClick(selectedWord)}
+                            OneTextInput(word, false, true){selectedWord -> onFixAndUpdateButtonClick(selectedWord)}
                         }
                     }
                 }
@@ -103,7 +109,7 @@ fun StartScreen(
                                 inputMongolian = ""
                                 inputForeign = ""
                             }
-                            onFixAndUpdateButtonClick()},
+                            onFixAndUpdateButtonClick(null)},
                         colors = ButtonDefaults.buttonColors(Color(0xFFab47bc))
                         ){
                         Text(
@@ -113,14 +119,15 @@ fun StartScreen(
                     Button(
                         onClick = {
                             selectedWord?.let {
-                                val word = WordPair(it.id, inputMongolian, inputForeign)
+                                val word = WordPair(it.id,inputMongolian, inputForeign)
                                 viewModel.updateWord(word)
                                 inputMongolian = ""
                                 inputForeign = ""
                                 selectedWord = null
                             }
-                            onFixAndUpdateButtonClick()},
-                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc))
+                            onFixAndUpdateButtonClick(selectedWord)},
+                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc)),
+                        enabled = !isWordListEmpty
                         ){
                         Text(
                             text = "Шинэчлэх"
@@ -135,8 +142,10 @@ fun StartScreen(
                                 selectedWord = null
                                 index = if (wordList.isEmpty()) 0 else (index - 1).coerceAtLeast(0)
                             }
+                            showDeleteDialog = true
                         },
-                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc))
+                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc)),
+                        enabled = !isWordListEmpty
                         ){
                         Text(
                             text = "устгах"
@@ -160,7 +169,8 @@ fun StartScreen(
                                 selectedWord = word
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc))
+                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc)),
+                        enabled = !isWordListEmpty
                         ){
                         Text(
                             text = "Дараа"
@@ -177,10 +187,41 @@ fun StartScreen(
                             }
 
                         },
-                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc))
+                        colors = ButtonDefaults.buttonColors(Color(0xFFab47bc)),
+                        enabled = !isWordListEmpty
                         ){
                         Text(
                             text = "Өмнөх"
+                        )
+                    }
+                    if (showDeleteDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteDialog = false },
+                            title = { Text("Устгах үйлдлийг баталгаажуулах") },
+                            text = { Text("Та энэ үгийг устгахыг хүсэж байна уу?") },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        selectedWord?.let {
+                                            viewModel.deleteWord(it)
+                                            inputForeign = ""
+                                            inputMongolian = ""
+                                            selectedWord = null
+                                            index = if (wordList.isEmpty()) 0 else (index - 1).coerceAtLeast(0)
+                                        }
+                                        showDeleteDialog = false // Диалогийг хаах
+                                    }
+                                ) {
+                                    Text("Тийм")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = { showDeleteDialog = false } // Диалогийг хаах
+                                ) {
+                                    Text("Үгүй")
+                                }
+                            }
                         )
                     }
                 }
@@ -190,7 +231,7 @@ fun StartScreen(
 }
 //hidden logic zasna
 @Composable
-fun OneTextInput(utguud: List<String>, isHiddenInit: Boolean, ismongolia: Boolean) {
+fun OneTextInput(utguud: List<String>, isHiddenInit: Boolean, ismongolia: Boolean, onLongPress: (WordPair) -> Unit) {
     var isHidden by remember { mutableStateOf(isHiddenInit) } // Эхлээд нуусан эсэхийг хянах
     val text = if (ismongolia) utguud[0] else utguud[1] // Монгол эсвэл Англи үг
 
@@ -201,6 +242,14 @@ fun OneTextInput(utguud: List<String>, isHiddenInit: Boolean, ismongolia: Boolea
         placeholder = { Text(text) }, // Нуусан үед placeholder дээр үг харагдана
         shape = RoundedCornerShape(12.dp),
         readOnly = true,
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(
+                onLongPress = {
+                    val word = WordPair(0, utguud[0], utguud[1])
+                    onLongPress(word)
+                }
+            )
+        }
     )
 }
 

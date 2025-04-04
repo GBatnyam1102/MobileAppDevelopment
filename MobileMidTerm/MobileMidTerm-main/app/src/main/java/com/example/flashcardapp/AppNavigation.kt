@@ -26,7 +26,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.example.flashcardapp.Screen.FixAndUpdateScreen
 import com.example.flashcardapp.Screen.RadioButtonScreen
+import com.example.flashcardapp.data.WordPair
 import com.example.flashcardapp.model.WordViewModel
+import kotlinx.coroutines.selects.select
 
 enum class FlashCardScreens(@StringRes val title: Int) {
     Start(R.string.start),
@@ -100,8 +102,10 @@ fun AppNavigation(
                 )
             }
             composable(FlashCardScreens.FixAndUpdate.name) {
+                val context = LocalContext.current
                 FixAndUpdateScreen(
                     viewModel = viewModel,
+                    selectedWord = null,
                     onInsertAndCancel = {
                         navController.navigate(FlashCardScreens.Start.name)
                     }
@@ -118,6 +122,10 @@ fun AppNavigation(
             }
         }
     }
+}
+
+@Composable
+fun ReminderDialogContent() {
 
 }
 
