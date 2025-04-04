@@ -28,6 +28,7 @@ import com.example.flashcardapp.Screen.FixAndUpdateScreen
 import com.example.flashcardapp.Screen.RadioButtonScreen
 import com.example.flashcardapp.data.WordPair
 import com.example.flashcardapp.model.WordViewModel
+import com.example.flashcardapp.utils.setupReminder
 import kotlinx.coroutines.selects.select
 
 enum class FlashCardScreens(@StringRes val title: Int) {
@@ -82,6 +83,11 @@ fun AppNavigation(
 ) {
 
     val navController = rememberNavController()
+    val context = LocalContext.current
+
+    LaunchedEffect(context) {
+        setupReminder(context)
+    }
 
     Scaffold(
         topBar = { FlashCardBar(navController) }
@@ -124,8 +130,4 @@ fun AppNavigation(
     }
 }
 
-@Composable
-fun ReminderDialogContent() {
-
-}
 
